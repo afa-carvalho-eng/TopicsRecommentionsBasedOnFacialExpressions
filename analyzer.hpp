@@ -12,9 +12,12 @@ public:
 
 private:
     std::vector<std::string> headlines;
-    std::vector<std::string> stopwords = {
-        "about", "which", "their", "these", "should", "since", "years", "business", "people", "before"
+    const std::vector<std::string> stopwords = {
+    "the", "and", "or", "but", "a", "an", "of", "to", "in", "on", "for", "with",
+    "at", "from", "by", "this", "that", "is", "it", "are", "was", "be", "as", "not",
+    "news", "york", "times", "update", "report", "today", "breaking", "live"
     };
+
 };
 
 #endif

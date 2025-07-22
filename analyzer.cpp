@@ -15,7 +15,6 @@ std::vector<std::string> TopicAnalyzer::extractKeywords(int topN) {
         std::istringstream stream(headline);
         std::string word;
         while (stream >> word) {
-            // Remove punctuation and convert to lowercase
             word.erase(std::remove_if(word.begin(), word.end(), ::ispunct), word.end());
             std::transform(word.begin(), word.end(), word.begin(), ::tolower);
 
@@ -25,9 +24,18 @@ std::vector<std::string> TopicAnalyzer::extractKeywords(int topN) {
         }
     }
 
+    std::vector<std::pair<std::string, int>> sortedWords(wordCount.begin(), wordCount.end());
+    std::sort(sortedWords.begin(), sortedWords.end(), [](const auto& a, const auto& b) {
+        return b.second < a.second;
+    });
+
     std::vector<std::string> keywords;
-    for (const auto& pair : wordCount) {
-        keywords.push_back(pair.first);
+    for (const auto& pair : sortedWords) {
+        if (pair.first.length() > 2 &&  // filter short words
+            !pair.first.empty() &&
+            !std::all_of(pair.first.begin(), pair.first.end(), ::isdigit)) {
+            keywords.push_back(pair.first);
+        }
         if (keywords.size() >= topN) break;
     }
 

@@ -1,23 +1,18 @@
-// analyzer.hpp
 #ifndef ANALYZER_HPP
 #define ANALYZER_HPP
 
 #include <vector>
 #include <string>
+#include <unordered_set>
 
 class TopicAnalyzer {
 public:
-    TopicAnalyzer(const std::vector<std::string>& headlines);
-    std::vector<std::string> extractKeywords(int topN = 5);
+    TopicAnalyzer(const std::vector<std::string>& inputTexts);
+    std::vector<std::string> extractKeywords(int topN = 5) const;
 
 private:
-    std::vector<std::string> headlines;
-    const std::vector<std::string> stopwords = {
-    "the", "and", "or", "but", "a", "an", "of", "to", "in", "on", "for", "with",
-    "at", "from", "by", "this", "that", "is", "it", "are", "was", "be", "as", "not",
-    "news", "york", "times", "update", "report", "today", "breaking", "live"
-    };
-
+    std::vector<std::string> texts;
+    static const std::unordered_set<std::string> stopwords;
 };
 
 #endif

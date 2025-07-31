@@ -1,26 +1,31 @@
-// suggestor.cpp
 #include "suggestor.hpp"
-#include <iostream>
+#include "sentiment.hpp"
 
-Suggestor::Suggestor(const std::vector<std::string>& headlines, Mood mood)
-    : headlines(headlines), mood(mood) {}
+Suggestor::Suggestor(const std::vector<std::string>& texts, Mood mood)
+    : texts(texts), mood(mood) {}
 
-std::string Suggestor::suggest() {
-    if (headlines.empty()) {
-        return "No trending topics found right now—maybe check again soon!";
+std::string Suggestor::suggest() const {
+    if (texts.empty()) {
+        return "No suggestions available at the moment.";
     }
 
-    // Simple: pick the first headline (or random headline)
-    std::string selectedHeadline = headlines[0];
-
-    // Optionally: choose based on mood (simplified)
-    if (mood == Mood::Happy && headlines.size() > 1) {
-        selectedHeadline = headlines[1]; // naive mood-specific choice
+    std::string match;
+    for (const auto& text : texts) {
+        Sentiment s = SentimentAnalyzer::analyze(text);
+        if ((mood == Mood::Happy && s == Sentiment::Positive) ||
+            (mood == Mood::Sad && s == Sentiment::Negative)) {
+            match = text;
+            break;
+        }
     }
 
-    std::string moodIntro = (mood == Mood::Happy)
+    if (match.empty()) {
+        match = texts[0];  // fallback
+    }
+
+    std::string intro = (mood == Mood::Happy)
         ? "How about this cheerful topic?"
-        : "Perhaps reflecting on this might resonate with your feelings.";
+        : "Perhaps this resonates with your current thoughts.";
 
-    return "💡 " + moodIntro + "\n**" + selectedHeadline + "**";
+    return "💡 " + intro + "\n" + match;
 }

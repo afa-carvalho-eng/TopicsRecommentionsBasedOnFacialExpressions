@@ -1,50 +1,50 @@
-// fetcher.cpp
 #include "fetcher.hpp"
 #include <curl/curl.h>
-#include <iostream>
-#include <sstream>
 #include <nlohmann/json.hpp>
+#include <iostream>
 
-NewsFetcher::NewsFetcher(const std::string& apiKey, const std::string& country, const std::string& category)
-    : apiKey(apiKey), country(country), category(category) {}
+NewsFetcher::NewsFetcher(std::string apiKey, std::string country, std::string category)
+    : apiKey(std::move(apiKey)), country(std::move(country)), category(std::move(category)) {}
 
-size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
+static size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
     ((std::string*)userp)->append((char*)contents, size * nmemb);
     return size * nmemb;
 }
 
+std::string NewsFetcher::constructUrl(int pageSize) const {
+    return "https://newsapi.org/v2/top-headlines?country=" + country +
+           "&category=" + category + "&pageSize=" + std::to_string(pageSize) +
+           "&apiKey=" + apiKey;
+}
+
 std::vector<std::string> NewsFetcher::fetch(int pageSize) {
     std::vector<std::string> headlines;
-    CURL* curl;
-    CURLcode res;
     std::string readBuffer;
 
-    std::string url = "https://newsapi.org/v2/top-headlines?country=" + country + "&category=" + category + "&pageSize=" + std::to_string(pageSize) + "&apiKey=" + apiKey;
+    CURL* curl = curl_easy_init();
+    if (!curl) return headlines;
 
-    curl_global_init(CURL_GLOBAL_DEFAULT);
-    curl = curl_easy_init();
+    curl_easy_setopt(curl, CURLOPT_URL, constructUrl(pageSize).c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+    CURLcode res = curl_easy_perform(curl);
 
-    if (curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
-
-        std::cout << url << std::endl;
-
-        res = curl_easy_perform(curl);
-        if (res != CURLE_OK) {
-            std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
+    if (res == CURLE_OK) {
+        try {
+            std::cout << res << std::endl;
+            auto json = nlohmann::json::parse(readBuffer);
+            for (const auto& article : json["articles"]) {
+                if (article.contains("title")) {
+                    headlines.push_back(article["title"].get<std::string>());
+                }
+            }
+        } catch (...) {
+            std::cerr << "Failed to parse JSON.\n";
         }
-
-        // Parse JSON
-        auto jsonResponse = nlohmann::json::parse(readBuffer);
-        for (const auto& article : jsonResponse["articles"]) {
-            headlines.push_back(article["title"].get<std::string>());
-        }
-
-        curl_easy_cleanup(curl);
+    } else {
+        std::cerr << "CURL error: " << curl_easy_strerror(res) << "\n";
     }
 
-    curl_global_cleanup();
+    curl_easy_cleanup(curl);
     return headlines;
 }

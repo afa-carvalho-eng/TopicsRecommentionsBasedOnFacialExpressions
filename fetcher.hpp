@@ -1,4 +1,3 @@
-// fetcher.hpp
 #ifndef FETCHER_HPP
 #define FETCHER_HPP
 
@@ -7,13 +6,15 @@
 
 class NewsFetcher {
 public:
-    NewsFetcher(const std::string& apiKey, const std::string& country = "us", const std::string& category = "general");
+    NewsFetcher(std::string apiKey, std::string country = "us", std::string category = "general");
     std::vector<std::string> fetch(int pageSize = 10);
 
 private:
     std::string apiKey;
     std::string country;
     std::string category;
+
+    std::string constructUrl(int pageSize) const;
 };
 
 #endif
